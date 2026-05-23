@@ -1,0 +1,10 @@
+# PHP / XAMPP ignore
+/uploads/*
+!/uploads/.gitkeep
+
+# IDE and system files
+.DS_Store
+Thumps.db
+.vscode/
+.idea/
+*.log
