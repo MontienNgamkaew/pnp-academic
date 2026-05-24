@@ -126,7 +126,7 @@ function toThaiNumerals($num): string
             z-index: 10;
         }
         .garuda-logo {
-            width: 1.5in; /* Standard Garuda height in official docs is 1.5 inches (approx 3.8 cm) */
+            width: 1.5cm; /* Standard small Garuda for official Thai memoranda (1.5 cm) */
             height: auto;
             display: block;
         }
@@ -135,8 +135,8 @@ function toThaiNumerals($num): string
             font-size: 29pt; /* Standard memo title size is 29pt */
             font-weight: bold;
             text-align: center;
-            padding-top: 35px; /* Aligns title vertically with middle of Garuda logo */
-            margin-bottom: 100px;
+            padding-top: 12px; /* Vertically aligns center of the text with standard 1.5cm Garuda logo */
+            margin-bottom: 35px;
             letter-spacing: 0.5px;
         }
         /* Metadata Header Fields */
