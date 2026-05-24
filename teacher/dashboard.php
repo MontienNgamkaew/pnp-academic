@@ -198,6 +198,7 @@ function renderStatusBadge(?string $status, ?string $timing = null): string
         <link rel="icon" type="image/png" href="../<?= htmlspecialchars($branding['logo_path']); ?>">
     <?php endif; ?>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=Outfit:wght@400;600;850&display=swap" rel="stylesheet">
@@ -476,7 +477,7 @@ function renderStatusBadge(?string $status, ?string $timing = null): string
                                 <td class="py-4 px-6 font-bold text-slate-700 tracking-wide">
                                     <div class="flex items-center gap-3">
                                         <span><?= e($c['course_code']); ?></span>
-                                        <form method="post" action="dashboard.php" class="inline" onsubmit="return confirm('⚠️ คำเตือนการลบวิชาสอน:\nคุณครูแน่ใจที่จะลบรายวิชา <?= e($c['course_code']); ?> - <?= e($c['course_name']); ?> ออกจากบัญชีวิชาที่สอนในภาคเรียนนี้ใช่หรือไม่?\n\n(ประวัติและไฟล์การยื่นส่งงานทั้งหมดของวิชานี้จะถูกลบทิ้งอย่างถาวรทันทีครับ)');">
+                                        <form method="post" action="dashboard.php" class="inline delete-course-form" data-course-code="<?= e($c['course_code']); ?>" data-course-name="<?= e($c['course_name']); ?>">
                                             <input type="hidden" name="csrf_token" value="<?= e(create_csrf_token()); ?>">
                                             <input type="hidden" name="action" value="delete_course">
                                             <input type="hidden" name="course_id" value="<?= $c['id']; ?>">
@@ -545,6 +546,63 @@ function renderStatusBadge(?string $status, ?string $timing = null): string
             form.classList.add('hidden');
         }
     }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // 1. Success Message popup
+        <?php if ($successMessage): ?>
+        Swal.fire({
+            title: 'สำเร็จ!',
+            text: <?= json_encode($successMessage); ?>,
+            icon: 'success',
+            confirmButtonColor: '#0f766e', // Teal 700
+            confirmButtonText: 'ตกลง',
+            customClass: {
+                popup: 'rounded-3xl border border-slate-200 shadow-xl font-thai'
+            }
+        });
+        <?php endif; ?>
+
+        // 2. Error Message popup
+        <?php if ($errorMessage): ?>
+        Swal.fire({
+            title: 'เกิดข้อผิดพลาด!',
+            text: <?= json_encode($errorMessage); ?>,
+            icon: 'error',
+            confirmButtonColor: '#e11d48', // Rose 600
+            confirmButtonText: 'ตกลง',
+            customClass: {
+                popup: 'rounded-3xl border border-slate-200 shadow-xl font-thai'
+            }
+        });
+        <?php endif; ?>
+
+        // 3. Intercept Course Deletion Form
+        const deleteCourseForms = document.querySelectorAll('.delete-course-form');
+        deleteCourseForms.forEach(form => {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const code = this.dataset.courseCode || '';
+                const name = this.dataset.courseName || 'รายวิชา';
+                Swal.fire({
+                    title: '⚠️ ยืนยันการลบรายวิชาสอน?',
+                    html: `คุณครูแน่ใจหรือไม่ว่าต้องการลบวิชา <strong>${code} - ${name}</strong> ออกจากรายการสอนในภาคเรียนนี้?<br><br><span class="text-rose-600 font-bold">⚠️ ประวัติและไฟล์เอกสารการยื่นส่งทั้งหมดของวิชานี้จะถูกลบทิ้งอย่างถาวรทันที!</span>`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#e11d48', // Rose 600
+                    cancelButtonColor: '#64748b',  // Slate 500
+                    confirmButtonText: 'ใช่, ลบรายวิชาออก',
+                    cancelButtonText: 'ยกเลิก',
+                    customClass: {
+                        popup: 'rounded-3xl border border-slate-200 shadow-xl font-thai'
+                    }
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        this.submit();
+                    }
+                });
+            });
+        });
+    });
 </script>
 </body>
 </html>

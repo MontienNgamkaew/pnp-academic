@@ -445,6 +445,7 @@ function renderComplianceBadge(string $status, string $labelType, bool $isLate =
     <?php endif; ?>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=Outfit:wght@400;600;850&display=swap" rel="stylesheet">
@@ -884,7 +885,7 @@ function renderComplianceBadge(string $status, string $labelType, bool $isLate =
                                                 class="inline-flex items-center gap-1 px-3 py-1.5 border border-slate-200 hover:bg-slate-50 text-[11px] font-bold rounded-lg transition text-slate-600">
                                                 ประเมินผลงาน
                                             </a>
-                                            <form method="post" action="overview.php" class="inline" onsubmit="return confirm('⚠️ คุณแน่ใจหรือไม่ว่าต้องการลบข้อมูลของ <?= e($td['teacher']['fullname']); ?>? \n\nการลบนี้จะยกเลิกการจัดสอนและลบเอกสาร/ประวัติงานวิชาการทั้งหมดของคุณครูรายนี้อย่างถาวรและไม่สามารถเรียกคืนได้!');">
+                                            <form method="post" action="overview.php" class="inline delete-teacher-form" data-teacher-name="<?= e($td['teacher']['fullname']); ?>">
                                                 <input type="hidden" name="csrf_token" value="<?= e(create_csrf_token()); ?>">
                                                 <input type="hidden" name="action" value="delete_teacher">
                                                 <input type="hidden" name="teacher_id" value="<?= $td['teacher']['id']; ?>">
@@ -1011,6 +1012,64 @@ function renderComplianceBadge(string $status, string $labelType, bool $isLate =
         &copy; <?= date('Y'); ?> <?= htmlspecialchars($branding['college_name']); ?> &middot; ฝ่ายวิชาการ &middot; สงวนลิขสิทธิ์
     </div>
 </footer>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 1. Success Message popup
+    <?php if ($successMessage): ?>
+    Swal.fire({
+        title: 'สำเร็จ!',
+        text: <?= json_encode($successMessage); ?>,
+        icon: 'success',
+        confirmButtonColor: '#0f172a', // Slate 900
+        confirmButtonText: 'ตกลง',
+        customClass: {
+            popup: 'rounded-3xl border border-slate-200 shadow-xl font-thai'
+        }
+    });
+    <?php endif; ?>
+
+    // 2. Error Message popup
+    <?php if ($errorMessage): ?>
+    Swal.fire({
+        title: 'เกิดข้อผิดพลาด!',
+        text: <?= json_encode($errorMessage); ?>,
+        icon: 'error',
+        confirmButtonColor: '#e11d48', // Rose 600
+        confirmButtonText: 'ตกลง',
+        customClass: {
+            popup: 'rounded-3xl border border-slate-200 shadow-xl font-thai'
+        }
+    });
+    <?php endif; ?>
+
+    // 3. Intercept Teacher Deletion Form
+    const deleteTeacherForms = document.querySelectorAll('.delete-teacher-form');
+    deleteTeacherForms.forEach(form => {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const teacherName = this.dataset.teacherName || 'คุณครู';
+            Swal.fire({
+                title: '⚠️ ยืนยันการลบข้อมูลครู?',
+                html: `คุณแน่ใจหรือไม่ว่าต้องการลบข้อมูลของ <strong>${teacherName}</strong>?<br><br><span class="text-rose-600 font-bold">การลบนี้จะยกเลิกการจัดสอนและลบเอกสาร/ประวัติงานวิชาการทั้งหมดของคุณครูรายนี้อย่างถาวรและไม่สามารถเรียกคืนได้!</span>`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#e11d48', // Rose 600
+                cancelButtonColor: '#64748b',  // Slate 500
+                confirmButtonText: 'ใช่, ลบออกทันที',
+                cancelButtonText: 'ยกเลิก',
+                customClass: {
+                    popup: 'rounded-3xl border border-slate-200 shadow-xl font-thai'
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    this.submit();
+                }
+            });
+        });
+    });
+});
+</script>
 
 </body>
 </html>

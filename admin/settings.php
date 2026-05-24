@@ -293,6 +293,7 @@ $systemTypeLabels = [
         <link rel="icon" type="image/png" href="../<?= htmlspecialchars($branding['logo_path']); ?>">
     <?php endif; ?>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=Outfit:wght@400;600;850&display=swap" rel="stylesheet">
@@ -613,7 +614,7 @@ $systemTypeLabels = [
             เมื่อสิ้นสุดภาคเรียนปัจจุบัน แดชบอร์ดแอดมินสามารถเปิดใช้งานภาคเรียนถัดไปได้จากส่วนนี้ ระบบจะทำการ <b>"แช่แข็ง" (Freeze)</b> ข้อมูลรายวิชาและประวัติการส่งงานทั้งหมดของเทอมเก่าไว้เป็นประวัติ (สามารถดูย้อนหลังได้ผ่านเมนูประวัติ) และเคลียร์กระดานว่างเพื่อเตรียมการสำหรับเทอมการศึกษาใหม่
         </p>
         
-        <form method="post" action="settings.php" onsubmit="return confirm('⚠️ ยืนยันการปิดภาคเรียน:\nการดำเนินการนี้จะทำการแช่แข็งประวัติการยื่นส่งและรายวิชาสอนเดิมทั้งหมดไว้เป็นประวัติ เพื่อเตรียมเปิดภาคเรียนใหม่\n\nคุณมั่นใจที่จะเปิดภาคเรียนใหม่ใช่หรือไม่?');" class="grid gap-4 sm:grid-cols-3 items-end">
+        <form method="post" action="settings.php" class="grid gap-4 sm:grid-cols-3 items-end reset-semester-form">
             <input type="hidden" name="csrf_token" value="<?= e(create_csrf_token()); ?>">
             <input type="hidden" name="action" value="new_semester">
             
@@ -643,7 +644,7 @@ $systemTypeLabels = [
             ใช้สำหรับลบไฟล์เอกสารเก่า หรือไฟล์ที่อัปโหลดซ้ำ/ไม่ได้ใช้งานออกจากเซิร์ฟเวอร์ เพื่อคืนพื้นที่เก็บข้อมูล (ระบบจะเปรียบเทียบและลบเฉพาะไฟล์ที่ไม่มีการลิงก์เชื่อมต่อในฐานข้อมูลแล้วเท่านั้น)
         </p>
         
-        <form method="post" action="settings.php" onsubmit="return confirm('ยืนยันการสแกนและลบไฟล์ขยะ? กระบวนการนี้อาจใช้เวลาสักครู่');">
+        <form method="post" action="settings.php" class="clean-files-form">
             <input type="hidden" name="csrf_token" value="<?= e(create_csrf_token()); ?>">
             <input type="hidden" name="action" value="garbage_collect">
             
@@ -660,6 +661,100 @@ $systemTypeLabels = [
         &copy; <?= date('Y'); ?> <?= htmlspecialchars($branding['college_name']); ?> &middot; ฝ่ายวิชาการ &middot; สงวนลิขสิทธิ์
     </div>
 </footer>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 1. Success Message popup
+    <?php if ($successMessage): ?>
+    Swal.fire({
+        title: 'สำเร็จ!',
+        text: <?= json_encode($successMessage); ?>,
+        icon: 'success',
+        confirmButtonColor: '#0f172a', // Slate 900
+        confirmButtonText: 'ตกลง',
+        customClass: {
+            popup: 'rounded-3xl border border-slate-200 shadow-xl font-thai'
+        }
+    });
+    <?php endif; ?>
+
+    // 2. Error Message popup
+    <?php if ($errorMessage): ?>
+    Swal.fire({
+        title: 'เกิดข้อผิดพลาด!',
+        text: <?= json_encode($errorMessage); ?>,
+        icon: 'error',
+        confirmButtonColor: '#e11d48', // Rose 600
+        confirmButtonText: 'ตกลง',
+        customClass: {
+            popup: 'rounded-3xl border border-slate-200 shadow-xl font-thai'
+        }
+    });
+    <?php endif; ?>
+
+    // 3. Intercept Reset Semester Form
+    const resetSemesterForm = document.querySelector('.reset-semester-form');
+    if (resetSemesterForm) {
+        resetSemesterForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const semesterName = document.getElementById('new_semester_name').value;
+            Swal.fire({
+                title: '⚠️ ยืนยันการปิดภาคเรียน?',
+                html: `การดำเนินการนี้จะทำการ <strong class="text-rose-600">แช่แข็งประวัติประวัติการยื่นส่งเดิมทั้งหมด</strong> เพื่อเริ่มภาคเรียนใหม่: <strong>${semesterName}</strong><br><br>คุณมั่นใจที่จะเริ่มภาคเรียนใหม่ใช่หรือไม่?`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#4f46e5', // Indigo 600
+                cancelButtonColor: '#64748b',  // Slate 500
+                confirmButtonText: 'ใช่, เปิดเทอมใหม่เลย',
+                cancelButtonText: 'ยกเลิก',
+                customClass: {
+                    popup: 'rounded-3xl border border-slate-200 shadow-xl font-thai'
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    this.submit();
+                }
+            });
+        });
+    }
+
+    // 4. Intercept Garbage Collect Form
+    const cleanFilesForm = document.querySelector('.clean-files-form');
+    if (cleanFilesForm) {
+        cleanFilesForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            Swal.fire({
+                title: 'ยืนยันการล้างไฟล์ขยะ?',
+                text: 'ระบบจะทำการสแกนและลบไฟล์เอกสารเก่าที่ไม่ได้อ้างอิงในฐานข้อมูลออกจากเซิร์ฟเวอร์เพื่อคืนพื้นที่ กระบวนการนี้อาจใช้เวลาสักครู่',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#0f172a', // Slate 900
+                cancelButtonColor: '#64748b',  // Slate 500
+                confirmButtonText: 'เริ่มสแกนและลบเลย',
+                cancelButtonText: 'ยกเลิก',
+                customClass: {
+                    popup: 'rounded-3xl border border-slate-200 shadow-xl font-thai'
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Swal.fire({
+                        title: 'กำลังสแกนระบบ...',
+                        text: 'กรุณารอสักครู่ ระบบกำลังเคลียร์ไฟล์ขยะและเพิ่มพื้นที่เก็บข้อมูล',
+                        allowOutsideClick: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        },
+                        customClass: {
+                            popup: 'rounded-3xl border border-slate-200 shadow-xl font-thai'
+                        }
+                    });
+                    this.submit();
+                }
+            });
+        });
+    }
+});
+</script>
 
 </body>
 </html>
