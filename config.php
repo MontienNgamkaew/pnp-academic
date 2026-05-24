@@ -3,10 +3,18 @@ declare(strict_types=1);
 
 date_default_timezone_set('Asia/Bangkok');
 
-define('DB_HOST', 'localhost');
-define('DB_NAME', 'pnp_academic');
-define('DB_USER', 'root');
-define('DB_PASS', '');
+// Dynamic Environment Configuration (XAMPP Local vs Hostinger Production)
+if (isset($_SERVER['HTTP_HOST']) && (strpos($_SERVER['HTTP_HOST'], 'montien.tech') !== false || $_SERVER['HTTP_HOST'] === 'pnp-edu.montien.tech')) {
+    define('DB_HOST', 'localhost');
+    define('DB_NAME', 'u651170081_pnp_academic');
+    define('DB_USER', 'u651170081_pnp_academic');
+    define('DB_PASS', 'a1d9GH10%');
+} else {
+    define('DB_HOST', 'localhost');
+    define('DB_NAME', 'pnp_academic');
+    define('DB_USER', 'root');
+    define('DB_PASS', '');
+}
 define('DB_CHARSET', 'utf8mb4');
 
 try {
