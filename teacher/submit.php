@@ -130,12 +130,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $fileNameCmps = explode(".", $fileName);
                     $fileExtension = strtolower(end($fileNameCmps));
                     
-                    // Safe Extensions only
-                    $allowedExtensions = ['pdf', 'docx', 'doc', 'xls', 'xlsx', 'zip', 'rar'];
-                    if (!in_array($fileExtension, $allowedExtensions, true)) {
-                        $errorMessage = 'ไม่อนุญาตให้อัปโหลดไฟล์นามสกุลนี้ อนุญาตเฉพาะ PDF, DOCX, DOC, XLSX, XLS, ZIP, RAR เท่านั้น';
-                    } elseif ($fileSize > 52428800) { // 50MB limit
-                        $errorMessage = 'ขนาดไฟล์เกิน 50 MB กรุณาลดขนาดไฟล์ก่อนอัปโหลด';
+                    // PDF only
+                    if ($fileExtension !== 'pdf') {
+                        $errorMessage = 'ไม่อนุญาตให้อัปโหลดไฟล์รูปแบบอื่น อนุญาตเฉพาะไฟล์เอกสารรูปแบบ PDF เท่านั้น เพื่อง่ายต่อการตรวจสำหรับแอดมิน';
+                    } elseif ($fileSize > 104857600) { // 100MB limit
+                        $errorMessage = 'ขนาดไฟล์อัปโหลดเกิน 100 MB กรุณาตรวจสอบหรือลดขนาดไฟล์ก่อนอัปโหลด';
                     } else {
                         // Create directory: uploads/semester_id/teacher_id/course_id/system_type/
                         $uploadDir = dirname(__DIR__) . "/uploads/{$semester['id']}/{$teacherId}/{$postCourseId}/{$postSystemType}/";
@@ -163,19 +162,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     } elseif (!empty($driveLink) && !filter_var($driveLink, FILTER_VALIDATE_URL)) {
                         $errorMessage = 'รูปแบบลิงก์ Google Drive ไม่ถูกต้อง (กรุณากรอกในรูปแบบ URL)';
                     } else {
-                        // All validated! Save to submissions table
-                        $stmt = $pdo->prepare("
-                            INSERT INTO submissions (course_id, system_type, file_path, drive_link, submission_timing, status)
-                            VALUES (:course_id, :system_type, :file_path, :drive_link, :submission_timing, 'pending')
-                        ");
-                        
-                        $stmt->execute([
+                        // Check if a submission already exists for this course and system type in the active semester
+                        $stmtCheck = $pdo->prepare("SELECT id, file_path FROM submissions WHERE course_id = :course_id AND system_type = :system_type LIMIT 1");
+                        $stmtCheck->execute([
                             'course_id' => $postCourseId,
-                            'system_type' => $postSystemType,
-                            'file_path' => $filePath,
-                            'drive_link' => !empty($driveLink) ? $driveLink : null,
-                            'submission_timing' => $submittedTiming
+                            'system_type' => $postSystemType
                         ]);
+                        $existingSubmission = $stmtCheck->fetch();
+                        
+                        if ($existingSubmission) {
+                            // If a new file was uploaded, delete the old file on disk
+                            if ($fileUploaded) {
+                                if (!empty($existingSubmission['file_path'])) {
+                                    $oldFile = dirname(__DIR__) . '/' . $existingSubmission['file_path'];
+                                    if (file_exists($oldFile)) {
+                                        @unlink($oldFile);
+                                    }
+                                }
+                            } else {
+                                // If no new file was uploaded, keep the old file path (if any)
+                                $filePath = $existingSubmission['file_path'];
+                            }
+                            
+                            // Update existing entry
+                            $stmt = $pdo->prepare("
+                                UPDATE submissions
+                                SET file_path = :file_path, drive_link = :drive_link, submission_timing = :submission_timing, status = 'pending', feedback = NULL, submitted_at = CURRENT_TIMESTAMP
+                                WHERE id = :id
+                            ");
+                            $stmt->execute([
+                                'file_path' => $filePath,
+                                'drive_link' => !empty($driveLink) ? $driveLink : null,
+                                'submission_timing' => $submittedTiming,
+                                'id' => (int)$existingSubmission['id']
+                            ]);
+                        } else {
+                            // No existing submission: insert a new one
+                            $stmt = $pdo->prepare("
+                                INSERT INTO submissions (course_id, system_type, file_path, drive_link, submission_timing, status)
+                                VALUES (:course_id, :system_type, :file_path, :drive_link, :submission_timing, 'pending')
+                            ");
+                            $stmt->execute([
+                                'course_id' => $postCourseId,
+                                'system_type' => $postSystemType,
+                                'file_path' => $filePath,
+                                'drive_link' => !empty($driveLink) ? $driveLink : null,
+                                'submission_timing' => $submittedTiming
+                            ]);
+                        }
                         
                         $_SESSION['success_flash'] = 'ยื่นส่งเอกสารของคุณเรียบร้อยแล้ว ระบบกำลังรอการตรวจประเมินจากผู้ดูแลระบบ';
                         redirect_to('dashboard.php');
@@ -363,14 +397,34 @@ $branding = get_branding_settings();
                 <div class="grid gap-6 md:grid-cols-2">
                     
                     <!-- File Upload Option -->
-                    <div class="border border-slate-200 rounded-2xl p-6 bg-slate-50/50 hover:bg-slate-50 transition relative">
-                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">ช่องทางที่ 1: อัปโหลดไฟล์จากเครื่องโดยตรง</label>
-                        <input type="file" name="file_upload" id="file_upload"
-                               class="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-black file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100 transition cursor-pointer"
-                               <?= !$isOpen ? 'disabled' : ''; ?>>
-                        <p class="text-[10px] text-slate-400 font-medium mt-2 leading-relaxed">
-                            อนุญาตเฉพาะไฟล์: **PDF, DOCX, DOC, XLSX, XLS, ZIP, RAR** ขนาดไฟล์ไม่เกิน 20MB
-                        </p>
+                    <div class="border border-slate-200 rounded-2xl p-6 bg-slate-50/50 hover:bg-slate-50 transition relative flex flex-col justify-between">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">ช่องทางที่ 1: อัปโหลดไฟล์จากเครื่องโดยตรง</label>
+                            <input type="file" name="file_upload" id="file_upload" accept="application/pdf"
+                                   class="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-black file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100 transition cursor-pointer"
+                                   <?= !$isOpen ? 'disabled' : ''; ?>>
+                            <p class="text-[10px] text-rose-500 font-bold mt-2 leading-relaxed">
+                                ⚠️ รับเฉพาะไฟล์รูปแบบ PDF เท่านั้น (ขนาดไฟล์สูงสุดไม่เกิน 100 MB)
+                            </p>
+                        </div>
+                        
+                        <!-- iLovePDF Help Banner -->
+                        <div class="mt-4 p-4 rounded-xl bg-red-50/60 border border-red-100 text-slate-700">
+                            <div class="flex items-start gap-2">
+                                <span class="p-1 rounded bg-red-100 text-red-700 text-[9px] font-black shrink-0 mt-0.5 uppercase">PDF Merge</span>
+                                <div class="text-[10px] leading-relaxed">
+                                    <span class="font-bold text-red-800">คำแนะนำ:</span> เพื่อความสะดวกและง่ายต่อการตรวจเอกสารของแอดมิน กรุณารวมเอกสารหลักฐานทั้งหมดของวิชานี้ให้เป็น <b>ไฟล์ PDF ไฟล์เดียวเท่านั้น</b> ก่อนส่ง
+                                    <?php if ($isOpen): ?>
+                                        <div class="mt-2.5">
+                                            <a href="https://www.ilovepdf.com/merge_pdf" target="_blank"
+                                               class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-600 hover:bg-red-700 active:scale-[0.97] text-white text-[9px] font-black rounded-lg transition shadow-sm no-underline">
+                                                <span>🔗 รวมไฟล์ PDF ออนไลน์ที่ iLovePDF ↗</span>
+                                            </a>
+                                        </div>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Drive Link Option -->
