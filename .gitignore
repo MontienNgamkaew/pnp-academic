@@ -1,6 +1,7 @@
 # PHP / XAMPP ignore
 /uploads/*
 !/uploads/.gitkeep
+!/uploads/branding/
 
 # IDE and system files
 .DS_Store

@@ -205,6 +205,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } catch (Exception $e) {
                 $errorMessage = $e->getMessage();
             }
+        } elseif ($action === 'save_signatures') {
+            $deputyDirector = trim((string)($_POST['deputy_director_name'] ?? ''));
+            $director = trim((string)($_POST['director_name'] ?? ''));
+            
+            try {
+                $stmt = $pdo->prepare("INSERT INTO branding_settings (meta_key, meta_value) VALUES (:key, :value) ON DUPLICATE KEY UPDATE meta_value = :value2");
+                $stmt->execute(['key' => 'deputy_director_name', 'value' => $deputyDirector, 'value2' => $deputyDirector]);
+                $stmt->execute(['key' => 'director_name', 'value' => $director, 'value2' => $director]);
+                
+                $deptsQuery = $pdo->query("SELECT DISTINCT department FROM users WHERE department IS NOT NULL AND department != ''")->fetchAll(PDO::FETCH_COLUMN);
+                foreach ($deptsQuery as $dept) {
+                    $postKey = 'dept_head_' . md5($dept);
+                    $deptHeadVal = trim((string)($_POST[$postKey] ?? ''));
+                    $stmt->execute(['key' => $postKey, 'value' => $deptHeadVal, 'value2' => $deptHeadVal]);
+                }
+                
+                // Force reload of static get_branding_settings
+                $branding = get_branding_settings(true);
+                
+                $successMessage = 'บันทึกข้อมูลลายเซ็นบุคลากรและหัวหน้าแผนกวิชาสำเร็จเรียบร้อยแล้ว';
+            } catch (Exception $e) {
+                $errorMessage = 'เกิดข้อผิดพลาดในการบันทึกข้อมูล: ' . $e->getMessage();
+            }
         } else {
             // Save standard settings (the existing logic)
             $types = ['course_syllabus', 'lesson_plan', 'teaching_materials'];
@@ -506,6 +529,75 @@ $systemTypeLabels = [
                 <button type="submit" 
                         class="px-6 py-2.5 text-xs font-black text-white bg-slate-900 hover:bg-slate-800 rounded-xl transition shadow-md shadow-slate-900/10">
                     บันทึกข้อมูลรูปลักษณ์ระบบ
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Management & Department Heads Signatory Settings Card -->
+    <div class="mt-8 bg-white border border-slate-200 rounded-[32px] p-6 sm:p-10 shadow-sm">
+        <h3 class="text-base sm:text-lg font-black text-slate-800 mb-2 flex items-center gap-2">
+            <svg class="w-5 h-5 text-slate-700 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            </svg>
+            <span>ตั้งค่าผู้ลงนามและหัวหน้าแผนกวิชา (Signatory & Department Heads Settings)</span>
+        </h3>
+        <p class="text-xs text-slate-400 font-medium mb-6 leading-relaxed">
+            ระบุชื่อ-นามสกุลของผู้บริหารและหัวหน้าแผนกวิชาต่างๆ เพื่อให้ระบบดึงข้อมูลชื่อเหล่านั้นไปลงในแบบฟอร์มบันทึกข้อความและรายงานเสนอส่งงานของครูตามแผนกวิชาโดยอัตโนมัติ
+        </p>
+        
+        <form method="post" action="settings.php" class="space-y-6">
+            <input type="hidden" name="csrf_token" value="<?= e(create_csrf_token()); ?>">
+            <input type="hidden" name="action" value="save_signatures">
+            
+            <div class="grid gap-6 md:grid-cols-2">
+                <!-- Deputy Director -->
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2" for="deputy_director_name">รองผู้อำนวยการฝ่ายวิชาการ</label>
+                    <input type="text" name="deputy_director_name" id="deputy_director_name" value="<?= e($branding['deputy_director_name'] ?? ''); ?>"
+                           class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 focus:outline-none focus:border-teal-700 focus:bg-white transition"
+                           placeholder="ตัวอย่างเช่น: นายประสงค์ บุญเติม">
+                </div>
+                
+                <!-- College Director -->
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2" for="director_name">ผู้อำนวยการวิทยาลัย</label>
+                    <input type="text" name="director_name" id="director_name" value="<?= e($branding['director_name'] ?? ''); ?>"
+                           class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 focus:outline-none focus:border-teal-700 focus:bg-white transition"
+                           placeholder="ตัวอย่างเช่น: นายวิชัย สมบูรณ์">
+                </div>
+            </div>
+            
+            <!-- Department Heads Dynamic Section -->
+            <div class="pt-6 border-t border-slate-100">
+                <h4 class="text-xs font-black text-slate-700 uppercase tracking-wider mb-4">กำหนดหัวหน้าแผนกวิชาต่างๆ (Department Heads)</h4>
+                <?php
+                $deptsQuery = $pdo->query("SELECT DISTINCT department FROM users WHERE department IS NOT NULL AND department != '' ORDER BY department ASC")->fetchAll(PDO::FETCH_COLUMN);
+                if (count($deptsQuery) > 0):
+                ?>
+                    <div class="grid gap-6 md:grid-cols-2">
+                        <?php foreach ($deptsQuery as $dept): 
+                            $deptKey = 'dept_head_' . md5($dept);
+                        ?>
+                            <div>
+                                <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2" for="<?= $deptKey; ?>"><?= htmlspecialchars($dept); ?></label>
+                                <input type="text" name="<?= $deptKey; ?>" id="<?= $deptKey; ?>" value="<?= e($branding[$deptKey] ?? ''); ?>"
+                                       class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 focus:outline-none focus:border-teal-700 focus:bg-white transition"
+                                       placeholder="ระบุชื่อหัวหน้าแผนกวิชา">
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                <?php else: ?>
+                    <p class="text-xs text-rose-500 font-semibold bg-rose-50/50 border border-rose-100 p-4 rounded-2xl">
+                        ยังไม่มีข้อมูลแผนกวิชาในระบบ (ข้อมูลแผนกวิชาจะถูกวิเคราะห์จากข้อมูลบุคลากรครูที่นำเข้าสู่ระบบ)
+                    </p>
+                <?php endif; ?>
+            </div>
+            
+            <div class="pt-6 border-t border-slate-100 flex items-center justify-end gap-3">
+                <button type="submit" 
+                        class="px-6 py-2.5 text-xs font-black text-white bg-slate-900 hover:bg-slate-800 rounded-xl transition shadow-md shadow-slate-900/10">
+                    บันทึกข้อมูลผู้ลงนามทั้งหมด
                 </button>
             </div>
         </form>
