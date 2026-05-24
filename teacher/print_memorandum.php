@@ -116,49 +116,52 @@ function toThaiNumerals($num): string
             max-width: 800px;
             margin: 0 auto;
             padding: 20px;
-        }
-        /* Top Garuda Area */
-        .garuda-container {
-            text-align: left;
-            margin-bottom: 5px;
             position: relative;
+        }
+        /* Top Garuda Area - Absolute Positioned */
+        .garuda-container {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 10;
         }
         .garuda-logo {
             width: 1.5in; /* Standard Garuda height in official docs is 1.5 inches (approx 3.8 cm) */
             height: auto;
             display: block;
-            margin: 0 auto 0 0; /* Left align standard for print memo */
         }
         /* Page Title */
         .memo-title {
             font-size: 29pt; /* Standard memo title size is 29pt */
             font-weight: bold;
             text-align: center;
-            margin-top: -30px;
+            padding-top: 35px; /* Aligns title vertically with middle of Garuda logo */
             margin-bottom: 25px;
             letter-spacing: 0.5px;
         }
         /* Metadata Header Fields */
         .metadata-section {
             border-bottom: 3px double #000;
-            padding-bottom: 10px;
+            padding-bottom: 12px;
             margin-bottom: 25px;
         }
         .metadata-row {
             display: flex;
-            margin-bottom: 8px;
+            align-items: flex-end;
+            margin-bottom: 12px;
+            font-size: 16pt;
         }
         .metadata-label {
             font-weight: bold;
             white-space: nowrap;
+            flex-shrink: 0;
         }
         .metadata-value {
             padding-left: 8px;
             flex-grow: 1;
-        }
-        .half-row {
-            width: 50%;
-            display: inline-flex;
+            border-bottom: 1px dotted #000;
+            padding-bottom: 1px;
+            min-height: 24px;
         }
         /* Content Area */
         .salutation {
@@ -292,22 +295,25 @@ function toThaiNumerals($num): string
     <!-- 3. Metadata Table -->
     <div class="metadata-section">
         <div class="metadata-row">
-            <span class="metadata-label">ส่วนราชการ</span>
-            <span class="metadata-value">ฝ่ายวิชาการ <?= htmlspecialchars($branding['college_name']); ?>&nbsp;&nbsp;..................................................................................................................................................</span>
+            <span class="metadata-label" style="min-width: 90px;">ส่วนราชการ</span>
+            <span class="metadata-value">ฝ่ายวิชาการ <?= htmlspecialchars($branding['college_name']); ?></span>
         </div>
-        <div class="metadata-row" style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-            <div style="width: 48%; display: flex; align-items: center;">
-                <span class="metadata-label">ที่</span>
-                <span class="metadata-value">&nbsp;&nbsp;.................../<?= toThaiNumerals($semYear); ?>&nbsp;&nbsp;..........................................................................</span>
+        <div class="metadata-row" style="display: flex; justify-content: space-between;">
+            <div style="width: 45%; display: flex; align-items: flex-end;">
+                <span class="metadata-label" style="min-width: 30px;">ที่</span>
+                <span class="metadata-value" style="display: flex; justify-content: space-between;">
+                    <span>&nbsp;</span>
+                    <span>/<?= toThaiNumerals($semYear); ?></span>
+                </span>
             </div>
-            <div style="width: 48%; display: flex; align-items: center; justify-content: flex-end;">
-                <span class="metadata-label">วันที่</span>
-                <span class="metadata-value">&nbsp;&nbsp;............................................................................................................................</span>
+            <div style="width: 50%; display: flex; align-items: flex-end;">
+                <span class="metadata-label" style="min-width: 45px;">วันที่</span>
+                <span class="metadata-value">&nbsp;</span>
             </div>
         </div>
         <div class="metadata-row">
-            <span class="metadata-label">เรื่อง</span>
-            <span class="metadata-value">ขอส่งโครงการสอน ประจำภาคเรียนที่ <?= toThaiNumerals($semester['semester_name']); ?>&nbsp;&nbsp;.........................................................................................................</span>
+            <span class="metadata-label" style="min-width: 50px;">เรื่อง</span>
+            <span class="metadata-value">ขอส่งโครงการสอน ประจำภาคเรียนที่ <?= toThaiNumerals($semester['semester_name']); ?></span>
         </div>
     </div>
 
