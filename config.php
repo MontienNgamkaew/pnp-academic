@@ -49,6 +49,12 @@ try {
             ('logo_text', 'PNP'),
             ('theme_color', 'dark-blue')
         ");
+        
+        // Auto-migrate: check if 'department' column exists in 'users' table, if not add it
+        $columns = $pdo->query("SHOW COLUMNS FROM users LIKE 'department'")->fetchAll();
+        if (empty($columns)) {
+            $pdo->exec("ALTER TABLE users ADD COLUMN department VARCHAR(255) NULL AFTER fullname");
+        }
     } catch (Exception $e) {
         // Fail silently
     }
