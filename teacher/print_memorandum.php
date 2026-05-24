@@ -214,6 +214,8 @@ function toThaiNumerals($num): string
             border-radius: 8px;
             font-size: 11.5pt; /* Smaller font for approval forms to fit in A4 */
             line-height: 1.35;
+            page-break-inside: avoid; /* Prevents splitting across print pages */
+            break-inside: avoid;      /* Modern equivalent for avoid splitting */
         }
         .approval-header {
             font-weight: bold;
