@@ -136,7 +136,7 @@ function toThaiNumerals($num): string
             font-weight: bold;
             text-align: center;
             padding-top: 35px; /* Aligns title vertically with middle of Garuda logo */
-            margin-bottom: 25px;
+            margin-bottom: 100px;
             letter-spacing: 0.5px;
         }
         /* Metadata Header Fields */
