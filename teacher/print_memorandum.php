@@ -106,7 +106,7 @@ function toThaiNumerals($num): string
         body {
             font-family: 'TH Sarabun New', 'Sarabun', sans-serif;
             font-size: 15pt;
-            line-height: 1.25;
+            line-height: 1.15; /* Reduced from 1.25 for a more compact print */
             color: #000;
             background-color: #fff;
             margin: 0;
@@ -118,7 +118,7 @@ function toThaiNumerals($num): string
             padding: 20px;
             position: relative;
         }
-        /* Top Garuda Area - Absolute Positioned */
+        /* Top Garuda Area - Absolute Positioned and Locked */
         .garuda-container {
             position: absolute;
             top: 20px;
@@ -126,7 +126,7 @@ function toThaiNumerals($num): string
             z-index: 10;
         }
         .garuda-logo {
-            width: 1.5cm; /* Standard small Garuda for official Thai memoranda (1.5 cm) */
+            width: 1.8cm; /* Enlarged slightly (1.8 cm) as requested, while keeping absolute positioning */
             height: auto;
             display: block;
         }
@@ -135,20 +135,20 @@ function toThaiNumerals($num): string
             font-size: 29pt; /* Standard memo title size is 29pt */
             font-weight: bold;
             text-align: center;
-            padding-top: 12px; /* Vertically aligns center of the text with standard 1.5cm Garuda logo */
-            margin-bottom: 35px;
+            padding-top: 15px; /* Vertically aligns center of the text with standard 1.8cm Garuda logo */
+            margin-bottom: 25px; /* Moved down to be closer to the first line (metadata section starts at 100px) */
             letter-spacing: 0.5px;
         }
         /* Metadata Header Fields */
         .metadata-section {
             border-bottom: 3px double #000;
-            padding-bottom: 12px;
-            margin-bottom: 25px;
+            padding-bottom: 8px; /* Tighter padding */
+            margin-bottom: 15px; /* Tighter margin */
         }
         .metadata-row {
             display: flex;
             align-items: flex-end;
-            margin-bottom: 12px;
+            margin-bottom: 6px; /* Tightened from 12px */
             font-size: 16pt;
         }
         .metadata-label {
@@ -166,54 +166,54 @@ function toThaiNumerals($num): string
         /* Content Area */
         .salutation {
             font-weight: bold;
-            margin-bottom: 20px;
+            margin-bottom: 10px; /* Tightened from 20px */
         }
         .paragraph {
             text-indent: 2.5cm; /* Standard paragraph indentation is 2.5 cm */
             text-align: justify;
-            margin-bottom: 15px;
+            margin-bottom: 8px; /* Tightened from 15px */
             text-justify: inter-word;
         }
         .course-list {
             margin-left: 2.5cm;
-            margin-bottom: 20px;
+            margin-bottom: 8px; /* Tightened from 20px */
             list-style: none;
             padding: 0;
         }
         .course-item {
-            margin-bottom: 6px;
+            margin-bottom: 3px; /* Tightened from 6px */
         }
         /* Signature Area */
         .signature-block {
             float: right;
             width: 320px;
             text-align: center;
-            margin-top: 40px;
-            margin-bottom: 40px;
+            margin-top: 20px; /* Tightened from 40px */
+            margin-bottom: 20px; /* Tightened from 40px */
         }
         .signature-line {
-            margin-bottom: 12px;
+            margin-bottom: 6px; /* Tightened from 12px */
         }
         .clearfix {
             clear: both;
         }
         /* Review and Approvals Section */
         .approvals-container {
-            margin-top: 30px;
+            margin-top: 20px; /* Tightened from 30px */
             border-top: 1px solid #000;
-            padding-top: 20px;
+            padding-top: 15px; /* Tightened from 20px */
         }
         .approval-grid {
             display: grid;
             grid-template-cols: 1fr 1fr;
-            gap: 20px;
+            gap: 15px; /* Tightened from 20px */
         }
         .approval-box {
             border: 1px solid #999;
-            padding: 15px;
+            padding: 10px; /* Tightened from 15px */
             border-radius: 8px;
             font-size: 11.5pt; /* Smaller font for approval forms to fit in A4 */
-            line-height: 1.4;
+            line-height: 1.35;
         }
         .approval-header {
             font-weight: bold;
