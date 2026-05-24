@@ -1,9 +1,3 @@
-CREATE DATABASE IF NOT EXISTS `pnp_academic`
-  CHARACTER SET utf8mb4
-  COLLATE utf8mb4_unicode_ci;
-
-USE `pnp_academic`;
-
 SET FOREIGN_KEY_CHECKS = 0;
 
 DROP TABLE IF EXISTS `submissions`;
