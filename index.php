@@ -1,6 +1,11 @@
 <?php
 declare(strict_types=1);
 
+// Enable temporary error reporting for diagnostic purposes
+ini_set('display_errors', '1');
+ini_set('display_startup_errors', '1');
+error_reporting(E_ALL);
+
 // Prevent browser/server caching of dynamic page content
 header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
 header("Cache-Control: post-check=0, pre-check=0", false);
