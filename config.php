@@ -43,7 +43,7 @@ try {
         )");
         
         $pdo->exec("INSERT IGNORE INTO branding_settings (meta_key, meta_value) VALUES 
-            ('system_name', 'ระบบบริหารงานวิชาการ'),
+            ('system_name', 'PNP Academix | ระบบบริหารงานวิชาการ'),
             ('college_name', 'วิทยาลัยการอาชีพพนมไพร'),
             ('logo_path', ''),
             ('logo_text', 'PNP'),
@@ -54,6 +54,14 @@ try {
         $columns = $pdo->query("SHOW COLUMNS FROM users LIKE 'department'")->fetchAll();
         if (empty($columns)) {
             $pdo->exec("ALTER TABLE users ADD COLUMN department VARCHAR(255) NULL AFTER fullname");
+        }
+        
+        // Auto-update system name from old default to 'PNP Academix | ระบบบริหารงานวิชาการ' if it hasn't been changed yet
+        $stmt = $pdo->prepare("SELECT meta_value FROM branding_settings WHERE meta_key = 'system_name' LIMIT 1");
+        $stmt->execute();
+        $currentName = $stmt->fetchColumn();
+        if ($currentName === 'ระบบบริหารงานวิชาการ' || $currentName === 'PNP Academix') {
+            $pdo->exec("UPDATE branding_settings SET meta_value = 'PNP Academix | ระบบบริหารงานวิชาการ' WHERE meta_key = 'system_name'");
         }
     } catch (Exception $e) {
         // Fail silently
@@ -81,7 +89,7 @@ function get_branding_settings(bool $force_reload = false): array {
         
         // Fill defaults if missing
         $defaults = [
-            'system_name' => 'ระบบบริหารงานวิชาการ',
+            'system_name' => 'PNP Academix | ระบบบริหารงานวิชาการ',
             'college_name' => 'วิทยาลัยการอาชีพพนมไพร',
             'logo_path' => '',
             'logo_text' => 'PNP',
@@ -94,7 +102,7 @@ function get_branding_settings(bool $force_reload = false): array {
         }
     } catch (Exception $e) {
         $settings = [
-            'system_name' => 'ระบบบริหารงานวิชาการ',
+            'system_name' => 'PNP Academix | ระบบบริหารงานวิชาการ',
             'college_name' => 'วิทยาลัยการอาชีพพนมไพร',
             'logo_path' => '',
             'logo_text' => 'PNP',
